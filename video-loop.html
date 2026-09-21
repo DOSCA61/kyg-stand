@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KnowYourGrub — video loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ---- Theme: knowyourgrub.com :root ---- */
+:root{--cream:#fbfcf8;--deep:#087c3a;--green:#13a447;--ink:#10243d;--light:#edf8f0;--muted:#617083;--navy:#071f3d;--navy2:#04101f}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:radial-gradient(120% 90% at 20% 0%,#0d3a66 0%,var(--navy) 55%,var(--navy2) 100%);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;cursor:none}
+body.awake{cursor:default}
+#stage{position:fixed;inset:0;display:grid;place-items:center}
+video{width:100%;height:100%;object-fit:contain;background:#000;display:none}
+body.playing video{display:block}
+body.playing{background:#000}
+/* ---- the "add a video" card, shown until a file is chosen ---- */
+#pick{width:min(900px,92vw);display:grid;gap:3vmin;justify-items:start;padding:6vmin;border-radius:3vmin;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);transition:border-color .2s,background .2s}
+#pick.over{border-color:var(--green);background:rgba(19,164,71,.12)}
+#pick img{height:clamp(50px,10vmin,140px);width:auto}
+#pick h1{font-size:clamp(30px,6vmin,84px);line-height:1.05;font-weight:800;letter-spacing:-.02em}
+#pick h1 em{font-style:normal;color:var(--green)}
+#pick p{font-size:clamp(17px,2.4vmin,32px);line-height:1.4;opacity:.9;max-width:28em}
+.btn{font:inherit;font-weight:700;font-size:clamp(16px,2.2vmin,28px);padding:.8em 1.5em;border-radius:999px;border:0;background:var(--green);color:#fff;cursor:pointer;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+.btn.sec{background:rgba(255,255,255,.95);color:var(--ink)}
+.small{font-size:clamp(13px,1.6vmin,20px);opacity:.6}
+/* ---- chrome ---- */
+#brand{position:fixed;left:2.2vmin;top:2vmin;z-index:5;opacity:.95}
+#brand img{height:clamp(30px,5.5vmin,80px);width:auto}
+#corner{position:fixed;right:2.2vmin;bottom:2.2vmin;display:flex;gap:1.4vmin;align-items:center;background:rgba(255,255,255,.96);color:var(--ink);padding:1.2vmin 1.4vmin;border-radius:1.6vmin;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:5;transition:opacity .6s}
+#corner img{width:clamp(70px,11vmin,150px);height:auto;border-radius:.8vmin}
+#corner div{font-size:clamp(12px,1.5vmin,20px);line-height:1.25;max-width:14em}
+#corner b{color:var(--deep)}
+body.noqr #corner{display:none}
+#bar{position:fixed;left:0;bottom:0;height:.6vmin;background:var(--green);width:0;z-index:6}
+#ctl{position:fixed;left:50%;bottom:3vmin;transform:translateX(-50%);display:flex;gap:1vmin;z-index:7;opacity:0;transition:opacity .3s;pointer-events:none}
+body.awake.playing #ctl{opacity:1;pointer-events:auto}
+#ctl button{font:inherit;font-weight:700;font-size:clamp(14px,1.8vmin,22px);padding:.7em 1.2em;border-radius:999px;border:0;background:rgba(255,255,255,.95);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+#ctl button.go{background:var(--green);color:#fff}
+#hint{position:fixed;left:2.2vmin;bottom:2.4vmin;font-size:clamp(11px,1.4vmin,18px);opacity:.45;z-index:5}
+#tap{position:fixed;inset:0;display:none;place-items:center;z-index:8;background:rgba(7,31,61,.6)}
+body.needtap #tap{display:grid}
+@media (max-width:900px){#corner div{display:none}}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <video id="vid" playsinline loop muted preload="auto"></video>
+  <div id="pick">
+    <img src="assets/logo-horizontal.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo-horizontal.png'" alt="KnowYourGrub — Scan, Check, Shop">
+    <h1>Add a video and it plays <em>on a loop</em>.</h1>
+    <p>Choose a file or drop it anywhere on this page. It stays on this computer — nothing is uploaded — and it is remembered the next time this page opens.</p>
+    <div style="display:flex;gap:1.5vmin;flex-wrap:wrap">
+      <button class="btn" id="chooseBtn">Choose a video</button>
+      <button class="btn sec" id="fileBtn">Use assets/kyg.mp4</button>
+    </div>
+    <p class="small">MP4 (H.264) or WebM · plays muted so the browser allows autoplay — press M or the Sound button for audio.</p>
+    <input type="file" id="fileIn" accept="video/*" style="display:none">
+  </div>
+</div>
+
+<div id="tap"><button class="btn" id="tapBtn">Tap to start</button></div>
+
+<div id="brand"><img src="assets/logo.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo.png'" alt=""></div>
+<div id="corner">
+  <img src="assets/app-qr.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/app-qr.png'" alt="QR code">
+  <div><b>Try it on your phone</b><br>Scan to open KnowYourGrub</div>
+</div>
+<div id="ctl">
+  <button data-act="pause" class="go" id="pauseBtn">Pause</button>
+  <button data-act="sound" id="soundBtn">Sound off</button>
+  <button data-act="qr" id="qrBtn">Hide QR</button>
+  <button data-act="full">Fullscreen</button>
+  <button data-act="change">Change video</button>
+</div>
+<div id="hint">Tap or press a key for controls · F fullscreen · M sound · loop never stops</div>
+<div id="bar"></div>
+
+<script>
+/* =====================================================================
+   VIDEO LOOP — one video, forever, in the KnowYourGrub theme.
+   Three ways to give it a video, in order of preference:
+     1. Put the file at ./assets/kyg.mp4 (or .webm) next to this page — it
+        starts on its own. Best for the stand: no clicking on the day.
+     2. Choose / drop a file — kept in this browser (IndexedDB), so it is
+        still there after a reload or a reboot. Nothing leaves the machine.
+     3. Add ?src=path/or/url.mp4 to the address.
+   ===================================================================== */
+const CFG={ sound:false, showQR:true, defaultFile:'assets/kyg.mp4', altFile:'assets/kyg.webm' };
+
+const vid=document.getElementById('vid'), pick=document.getElementById('pick'), bar=document.getElementById('bar');
+const fileIn=document.getElementById('fileIn');
+let idleT=null, objectURL=null;
+
+/* ---- tiny IndexedDB store for the chosen file ---- */
+const DB='kyg-video-loop';
+function db(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB,1); r.onupgradeneeded=()=>r.result.createObjectStore('v'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) }) }
+async function remember(file){ try{ const d=await db(); await new Promise((res,rej)=>{ const t=d.transaction('v','readwrite'); t.objectStore('v').put(file,'file'); t.oncomplete=res; t.onerror=()=>rej(t.error) }) }catch(e){} }
+async function recall(){ try{ const d=await db(); return await new Promise((res,rej)=>{ const t=d.transaction('v'); const g=t.objectStore('v').get('file'); g.onsuccess=()=>res(g.result||null); g.onerror=()=>rej(g.error) }) }catch(e){ return null } }
+async function forget(){ try{ const d=await db(); await new Promise((res)=>{ const t=d.transaction('v','readwrite'); t.objectStore('v').delete('file'); t.oncomplete=res; t.onerror=res }) }catch(e){} }
+
+/* ---- playing ---- */
+function play(src){
+  if(objectURL){ URL.revokeObjectURL(objectURL); objectURL=null }
+  if(src instanceof Blob){ objectURL=URL.createObjectURL(src); vid.src=objectURL } else vid.src=src;
+  vid.muted=!CFG.sound; vid.loop=true;
+  document.body.classList.add('playing'); pick.style.display='none';
+  vid.play().then(()=>document.body.classList.remove('needtap')).catch(()=>document.body.classList.add('needtap'));
+}
+function stop(){ vid.pause(); vid.removeAttribute('src'); vid.load(); document.body.classList.remove('playing','needtap'); pick.style.display='' }
+/* Does a file exist at this URL? A HEAD is not allowed on file://, so probe by loading metadata. */
+function probe(src){ return new Promise(res=>{ const v=document.createElement('video'); v.preload='metadata'; v.muted=true; const done=ok=>{ v.src=''; res(ok) }; v.onloadedmetadata=()=>done(true); v.onerror=()=>done(false); v.src=src; setTimeout(()=>done(false),8000) }) }
+
+vid.addEventListener('timeupdate',()=>{ if(vid.duration) bar.style.width=(vid.currentTime/vid.duration*100)+'%' });
+vid.addEventListener('error',()=>{ if(document.body.classList.contains('playing')){ stop(); alert('That file could not be played. Use an MP4 (H.264) or WebM.') } });
+
+/* ---- choosing ---- */
+async function useFile(f){ if(!f||!f.type.startsWith('video/'))return; await remember(f); play(f) }
+document.getElementById('chooseBtn').onclick=()=>fileIn.click();
+fileIn.onchange=()=>{ useFile(fileIn.files[0]); fileIn.value='' };
+document.getElementById('fileBtn').onclick=async()=>{ if(await probe(CFG.defaultFile))play(CFG.defaultFile); else if(await probe(CFG.altFile))play(CFG.altFile); else alert('No file found at '+CFG.defaultFile+' — put the video there, next to this page.') };
+['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); pick.classList.add('over') }));
+['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); pick.classList.remove('over') }));
+document.addEventListener('drop',e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f)useFile(f) });
+document.getElementById('tapBtn').onclick=()=>{ vid.play().then(()=>document.body.classList.remove('needtap')).catch(()=>{}) };
+
+/* ---- controls ---- */
+function wake(){ document.body.classList.add('awake'); clearTimeout(idleT); idleT=setTimeout(()=>document.body.classList.remove('awake'),5000) }
+function setSound(v){ CFG.sound=v; vid.muted=!v; document.getElementById('soundBtn').textContent=v?'Sound on':'Sound off' }
+function setQR(v){ CFG.showQR=v; document.body.classList.toggle('noqr',!v); document.getElementById('qrBtn').textContent=v?'Hide QR':'Show QR'; try{localStorage.setItem('kyg-loop-qr',v?'1':'0')}catch(e){} }
+function toggleFull(){ if(document.fullscreenElement)document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>{}) }
+function togglePause(){ if(vid.paused){ vid.play().catch(()=>{}); document.getElementById('pauseBtn').textContent='Pause' } else { vid.pause(); document.getElementById('pauseBtn').textContent='Resume' } }
+document.getElementById('ctl').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; e.stopPropagation(); wake();
+  const a=b.dataset.act;
+  if(a==='pause')togglePause();
+  if(a==='sound')setSound(!CFG.sound);
+  if(a==='qr')setQR(!CFG.showQR);
+  if(a==='full')toggleFull();
+  if(a==='change'){ forget(); stop(); }
+});
+document.addEventListener('click',e=>{ if(e.target.closest('#ctl,#pick,#tap'))return; wake() });
+document.addEventListener('mousemove',wake);
+document.addEventListener('keydown',e=>{
+  wake(); const k=e.key.toLowerCase();
+  if(k==='f')toggleFull(); else if(k==='m')setSound(!CFG.sound); else if(k==='p'||k===' '){ e.preventDefault(); togglePause() } else if(k==='q')setQR(!CFG.showQR); else if(k==='escape'){}
+});
+if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen').catch(()=>{}); lock(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')lock() }) }
+
+/* ---- start: ?src → remembered file → assets/kyg.mp4 → ask ---- */
+(async()=>{
+  try{ if(localStorage.getItem('kyg-loop-qr')==='0')setQR(false) }catch(e){}
+  const q=new URLSearchParams(location.search).get('src');
+  if(q){ play(q); return }
+  const f=await recall(); if(f){ play(f); return }
+  if(await probe(CFG.defaultFile)){ play(CFG.defaultFile); return }
+  if(await probe(CFG.altFile)){ play(CFG.altFile); return }
+  /* nothing yet — the card stays up */
+})();
+</script>
+</body>
+</html>
