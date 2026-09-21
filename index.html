@@ -221,40 +221,6 @@ body.light #hint{color:var(--ink)}
   </div>
 </section>
 
-<!-- 10. Video (skipped automatically if no file is found) -->
-<section class="slide" id="vslide" data-secs="0">
-  <video id="vid" playsinline muted preload="auto">
-    <source src="assets/kyg.mp4" type="video/mp4">
-    <source src="assets/kyg.webm" type="video/webm">
-  </video>
-</section>
-
-<!-- 11. Try it -->
-<section class="slide green" data-secs="12">
-  <div class="inner two">
-    <div style="display:grid;gap:2vmin">
-      <div class="eyebrow">Try it now</div>
-      <h2>Ready to <em>Know Your Grub</em>?</h2>
-      <p class="lede">It’s a web app — nothing to install. Point your camera at the code, set up who you shop for, and scan anything on the stand.</p>
-      <span class="pill">knowyourgrub.com</span>
-    </div>
-    <div class="imgwrap"><img class="qrbig" src="assets/app-qr.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/app-qr.png'" alt="QR code to open KnowYourGrub"></div>
-  </div>
-</section>
-
-<!-- 12. Thanks -->
-<section class="slide cream" data-secs="9">
-  <div class="inner" style="justify-items:center;text-align:center">
-    <div class="eyebrow">With thanks to our sponsors</div>
-    <h2>Helping us build a <em>healthier food future</em>.</h2>
-    <div class="sponsors">
-      <img src="assets/kilowen.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/kilowen.png'" alt="Killowen Farm">
-      <img src="assets/greentechhq.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/greentechhq.png'" alt="GreenTechHQ">
-    </div>
-    <p class="partners">Partners: <b>Farmbiddy.ai</b> · <b>Nutrition with Bridget</b> · <b>Quantum Build</b></p>
-  </div>
-</section>
-
 </div>
 
 <div id="brand"><img src="assets/logo.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo.png'" alt=""></div>
@@ -291,7 +257,7 @@ const CFG={
 };
 
 const slides=[...document.querySelectorAll('.slide')];
-const vslide=document.getElementById('vslide'), vid=document.getElementById('vid');
+const vslide=document.getElementById('vslide'), vid=document.getElementById('vid')||document.createElement('video');
 const bar=document.getElementById('bar'), dots=document.getElementById('dots');
 let i=0, timer=null, t0=0, dur=0, elapsed=0, paused=false, idleT=null, loops=0, haveVideo=false, raf=null;
 
@@ -300,7 +266,7 @@ dots.innerHTML=slides.map(()=>'<i></i>').join('');
 /* Is there a video file at all? */
 vid.addEventListener('loadedmetadata',()=>{haveVideo=true});
 vid.addEventListener('error',()=>{haveVideo=false},true);
-vid.load();
+if(vslide)vid.load();
 
 function secsFor(s){ return Number(s.dataset.secs)||CFG.defaultSecs }
 function show(n,{user=false}={}){
