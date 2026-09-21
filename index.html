@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KnowYourGrub — stand loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ---- Theme: lifted from knowyourgrub.com/styles.css :root ---- */
+:root{
+  --cream:#fbfcf8; --deep:#087c3a; --green:#13a447; --ink:#10243d; --light:#edf8f0;
+  --muted:#617083; --navy:#071f3d; --orange:#ff9800; --purple:#6c63ff;
+  --navy2:#04101f;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--navy);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;cursor:none}
+body.awake{cursor:default}
+#stage{position:fixed;inset:0}
+.slide{position:absolute;inset:0;display:grid;place-items:center;padding:6vmin 8vmin;opacity:0;transition:opacity .9s ease;pointer-events:none}
+.slide.on{opacity:1;pointer-events:auto}
+.slide.navy{background:radial-gradient(120% 90% at 20% 0%,#0d3a66 0%,var(--navy) 55%,var(--navy2) 100%);color:#fff}
+.slide.cream{background:linear-gradient(180deg,#fff 0%,var(--cream) 60%,var(--light) 100%);color:var(--ink)}
+.slide.green{background:linear-gradient(135deg,var(--deep) 0%,var(--green) 100%);color:#fff}
+.inner{width:min(1500px,100%);display:grid;gap:3vmin;align-items:center}
+.two{grid-template-columns:1.15fr 1fr}
+.eyebrow{font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(14px,1.6vmin,22px);color:var(--green)}
+.cream .eyebrow{color:var(--deep)}
+.green .eyebrow{color:#dff7e6}
+h1{font-size:clamp(40px,8.5vmin,124px);line-height:1.02;font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(32px,6.2vmin,92px);line-height:1.05;font-weight:800;letter-spacing:-.02em}
+h1 em,h2 em{font-style:normal;color:var(--green)}
+.cream h1 em,.cream h2 em{color:var(--deep)}
+.green h2 em{color:#fff;text-decoration:underline;text-decoration-color:rgba(255,255,255,.5);text-underline-offset:.12em}
+.lede{font-size:clamp(20px,2.8vmin,40px);line-height:1.35;max-width:26em;opacity:.92}
+.cream .lede{color:#2b3f58}
+.stat{display:grid;gap:.4vmin;padding:2.4vmin 2.8vmin;border-radius:2vmin;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.cream .stat{background:#fff;border-color:#dbe7df;box-shadow:0 10px 30px rgba(7,31,61,.06)}
+.stat b{font-size:clamp(44px,8vmin,120px);line-height:1;font-weight:800;color:var(--green)}
+.cream .stat b{color:var(--deep)}
+.stat span{font-size:clamp(15px,2vmin,26px);line-height:1.3;opacity:.9}
+.stats{display:grid;gap:2vmin}
+.src{font-size:clamp(12px,1.4vmin,18px);opacity:.6;margin-top:1vmin}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5vmin;width:100%}
+.step{padding:3vmin;border-radius:2.4vmin;background:#fff;border:1px solid #dbe7df;box-shadow:0 12px 34px rgba(7,31,61,.07);display:grid;gap:1.2vmin;align-content:start}
+.step .n{width:5.2vmin;height:5.2vmin;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;font-size:2.6vmin}
+.step h3{font-size:clamp(20px,3vmin,42px);line-height:1.1;font-weight:800}
+.step p{font-size:clamp(15px,2vmin,26px);line-height:1.35;color:#2b3f58}
+.label{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:clamp(16px,2.3vmin,32px);line-height:1.5;padding:3vmin;border-radius:2vmin;background:#fff;color:var(--ink);border:1px solid #dbe7df;box-shadow:0 12px 34px rgba(7,31,61,.08)}
+.label mark{background:#fff3d6;color:#7a4b00;border-radius:.3em;padding:0 .2em}
+.label .g{color:var(--deep);font-weight:700}
+.three{display:grid;grid-template-columns:repeat(3,1fr);gap:2.4vmin;width:100%}
+.card{padding:3vmin;border-radius:2.4vmin;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);display:grid;gap:1vmin;align-content:start}
+.card h3{font-size:clamp(20px,2.9vmin,40px);line-height:1.1}
+.card p{font-size:clamp(15px,2vmin,26px);line-height:1.35;opacity:.9}
+.card .k{font-size:clamp(13px,1.5vmin,20px);letter-spacing:.12em;text-transform:uppercase;color:var(--green);font-weight:700}
+.pill{display:inline-block;padding:.5em 1.1em;border-radius:999px;background:var(--green);color:#fff;font-weight:700;font-size:clamp(14px,1.8vmin,24px)}
+.cream .pill{background:var(--deep)}
+.imgwrap{display:grid;place-items:center}
+.imgwrap img{max-width:100%;max-height:70vh;object-fit:contain;filter:drop-shadow(0 20px 50px rgba(0,0,0,.35))}
+.cream .imgwrap img{filter:drop-shadow(0 20px 50px rgba(7,31,61,.18))}
+.logo{height:clamp(60px,12vmin,180px);width:auto}
+.finalist{font-size:clamp(18px,2.4vmin,34px);font-weight:600;color:#dff7e6}
+.qrbig{width:min(38vmin,420px);height:auto;border-radius:2vmin;background:#fff;padding:1.5vmin}
+.sponsors{display:flex;gap:6vmin;align-items:center;justify-content:center;flex-wrap:wrap}
+.sponsors img{height:clamp(50px,12vmin,160px);width:auto}
+.partners{font-size:clamp(16px,2.2vmin,30px);color:#2b3f58;text-align:center}
+.partners b{color:var(--deep)}
+/* video slide */
+#vslide{background:#000}
+#vslide video{width:100%;height:100%;object-fit:contain}
+/* ---- chrome that stays on every slide ---- */
+#corner{position:fixed;right:2.2vmin;bottom:2.2vmin;display:flex;gap:1.4vmin;align-items:center;background:rgba(255,255,255,.96);color:var(--ink);padding:1.2vmin 1.4vmin;border-radius:1.6vmin;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:5;transition:opacity .6s}
+#corner img{width:clamp(70px,11vmin,150px);height:auto;border-radius:.8vmin}
+#corner div{font-size:clamp(12px,1.5vmin,20px);line-height:1.25;max-width:14em}
+#corner b{color:var(--deep)}
+body.hidecorner #corner{opacity:0}
+#bar{position:fixed;left:0;bottom:0;height:.6vmin;background:var(--green);width:0;z-index:6;transition:width .25s linear}
+#brand{position:fixed;left:2.2vmin;top:2vmin;z-index:5;display:flex;align-items:center;gap:1.4vmin;opacity:.95}
+#brand img{height:clamp(30px,5.5vmin,80px);width:auto}
+.slide.navy ~ #brand .wm{color:#fff}
+#ctl{position:fixed;left:50%;bottom:3vmin;transform:translateX(-50%);display:flex;gap:1vmin;z-index:7;opacity:0;transition:opacity .3s;pointer-events:none}
+body.awake #ctl{opacity:1;pointer-events:auto}
+#ctl button{font:inherit;font-weight:700;font-size:clamp(14px,1.8vmin,22px);padding:.7em 1.2em;border-radius:999px;border:0;background:rgba(255,255,255,.95);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+#ctl button.go{background:var(--green);color:#fff}
+#dots{position:fixed;left:50%;top:2.4vmin;transform:translateX(-50%);display:flex;gap:.8vmin;z-index:5}
+#dots i{width:1.2vmin;height:1.2vmin;border-radius:50%;background:rgba(255,255,255,.35);display:block}
+#dots i.on{background:var(--green)}
+body.light #dots i{background:rgba(7,31,61,.2)}
+body.light #dots i.on{background:var(--deep)}
+#hint{position:fixed;left:2.2vmin;bottom:2.4vmin;font-size:clamp(11px,1.4vmin,18px);opacity:.45;z-index:5;color:#fff}
+body.light #hint{color:var(--ink)}
+@media (max-width:900px){.two,.three,.steps{grid-template-columns:1fr}.imgwrap img{max-height:38vh}#corner div{display:none}}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="stage">
+
+<!-- 1. Title -->
+<section class="slide navy on" data-secs="10">
+  <div class="inner two">
+    <div style="display:grid;gap:2.4vmin">
+      <img class="logo" src="assets/logo-horizontal.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo-horizontal.png'" alt="KnowYourGrub — Scan, Check, Shop">
+      <h1>Know what’s <em>really</em> in your food.</h1>
+      <p class="lede">Scan your food. Understand the label. See how it matches you.</p>
+      <p class="finalist">TechIreland National AI Challenge 2026 · Finalist</p>
+    </div>
+    <div class="imgwrap"><img src="assets/grub.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/grub.png'" alt="Grub, the KnowYourGrub food detective"></div>
+  </div>
+</section>
+
+<!-- 2. The problem -->
+<section class="slide cream" data-secs="12">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">The problem</div>
+      <h2>At least one in ten people here <em>avoid something</em>.</h2>
+      <p class="lede">Allergy, intolerance, coeliac disease, a training plan, a doctor’s advice. The label carries the information — but none of it is personal.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><b>900,000</b><span>people in Ireland avoiding at least one food — up to 10%+ of the population</span><span class="src">safefood</span></div>
+      <div class="stat"><b>48</b><span>FSAI allergen alerts in 2025 — the third-highest year on record, after 58 in 2024</span><span class="src">FSAI allergen alerts</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. The twist -->
+<section class="slide navy" data-secs="14">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">The part nobody tells you</div>
+      <h2>The label is <em>allowed</em> not to tell you.</h2>
+      <p class="lede">Under EU Regulation 1169/2011, wheat‑based glucose syrup need not mention wheat. “Lecithin” may be sunflower — or soya. Nine apps checked; none handles these legal omissions.</p>
+    </div>
+    <div class="label">
+      Ingredients: Wholegrain oats, <mark>glucose syrup</mark>, milk solids, natural flavouring, <mark>emulsifier (lecithin)</mark>, malt extract…<br><br>
+      <span class="g">KnowYourGrub:</span> the label says milk and malt. It does not say what the glucose syrup was made from, and the law does not require it to. Here is why that matters for you.
+    </div>
+  </div>
+</section>
+
+<!-- 4. Three steps -->
+<section class="slide cream" data-secs="12">
+  <div class="inner">
+    <div style="text-align:center;display:grid;gap:1.4vmin;justify-items:center">
+      <div class="eyebrow">How it works</div>
+      <h2>Know your food in <em>three steps</em>.</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="n">1</div><h3>Create your Food Profile</h3><p>Allergies, intolerances, ingredients to avoid, preferences and nutrition goals — for everyone in the house.</p></div>
+      <div class="step"><div class="n">2</div><h3>Scan your food</h3><p>Barcode, live camera, or a photo of the real label. Any language. Menus too, when you’re eating out.</p></div>
+      <div class="step"><div class="n">3</div><h3>Know your match</h3><p>See how the food fits each person’s needs — and understand why. We show the match. You make the choice.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. What it says -->
+<section class="slide green" data-secs="12">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">Our promise</div>
+      <h2>We don’t tell you whether food is safe.</h2>
+      <p class="lede">We tell you what the label says, what it doesn’t, and why the difference matters. The choice — and the confidence — stays with you.</p>
+    </div>
+    <div class="imgwrap"><img src="assets/app-scan.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/app-scan.png'" alt="KnowYourGrub scanning a product against household profiles"></div>
+  </div>
+</section>
+
+<!-- 6. Built with AI, responsibly -->
+<section class="slide navy" data-secs="14">
+  <div class="inner">
+    <div style="display:grid;gap:1.4vmin">
+      <div class="eyebrow">Built with AI — responsibly</div>
+      <h2>The model is never allowed to <em>assert</em>.</h2>
+    </div>
+    <div class="three">
+      <div class="card"><div class="k">Grounding</div><h3>Every answer comes from the label</h3><p>The AI only phrases what is already in the product’s own facts. It cannot add a number, resolve an ambiguity, or claim something is absent.</p></div>
+      <div class="card"><div class="k">Ambiguity knowledge base</div><h3>18 legal gaps, each cited to the law</h3><p>What a label is permitted to leave out — lecithin, E471, glucose syrup, gelatine, “may contain” — written down once and checked against.</p></div>
+      <div class="card"><div class="k">Fails closed</div><h3>An answer that goes too far is thrown away</h3><p>Not softened. The label’s own words go up instead. Seventy‑seven self‑checking features verify the build on every launch.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Recall watch -->
+<section class="slide cream" data-secs="11">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">Recall watch</div>
+      <h2>A recall that names something <em>you’ve bought</em> finds you.</h2>
+      <p class="lede">The FSAI publishes every allergen alert — with no feed and no API. KnowYourGrub reads them, and matches each one against your scans, basket, receipts and diary. Matching happens on your phone; nothing personal leaves it.</p>
+    </div>
+    <div class="stat"><b>Check<br>your pack</b><span>Never “you have this”. The notice, quoted as the FSAI wrote it, with the batch details — and who in the house avoids what it names.</span></div>
+  </div>
+</section>
+
+<!-- 8. Eating out -->
+<section class="slide navy" data-secs="11">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">Eating out</div>
+      <h2>Photograph the menu. <em>Any language.</em></h2>
+      <p class="lede">Every dish translated and checked against everyone at the table. What the menu says, what the dish usually contains, and what you still need to ask — kept apart, never blurred.</p>
+    </div>
+    <div class="three" style="grid-template-columns:1fr">
+      <div class="card"><div class="k">Tonight’s shortlist</div><h3>Four restaurants, side by side</h3><p>For the person hardest to feed: how many dishes carry no flag at all.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Professionals -->
+<section class="slide cream" data-secs="11">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">For nutritionists &amp; dietitians</div>
+      <h2>Your advice shouldn’t end when your client <em>leaves the room</em>.</h2>
+      <p class="lede">Shared food diaries. A living record between visits. See who is progressing and who needs attention — while the choice stays with the client.</p>
+    </div>
+    <div class="imgwrap"><img src="assets/pro-overview.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/pro-overview.png'" alt="KnowYourGrub Professional overview"></div>
+  </div>
+</section>
+
+<!-- 10. Video (skipped automatically if no file is found) -->
+<section class="slide" id="vslide" data-secs="0">
+  <video id="vid" playsinline muted preload="auto">
+    <source src="assets/kyg.mp4" type="video/mp4">
+    <source src="assets/kyg.webm" type="video/webm">
+  </video>
+</section>
+
+<!-- 11. Try it -->
+<section class="slide green" data-secs="12">
+  <div class="inner two">
+    <div style="display:grid;gap:2vmin">
+      <div class="eyebrow">Try it now</div>
+      <h2>Ready to <em>Know Your Grub</em>?</h2>
+      <p class="lede">It’s a web app — nothing to install. Point your camera at the code, set up who you shop for, and scan anything on the stand.</p>
+      <span class="pill">knowyourgrub.com</span>
+    </div>
+    <div class="imgwrap"><img class="qrbig" src="assets/app-qr.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/app-qr.png'" alt="QR code to open KnowYourGrub"></div>
+  </div>
+</section>
+
+<!-- 12. Thanks -->
+<section class="slide cream" data-secs="9">
+  <div class="inner" style="justify-items:center;text-align:center">
+    <div class="eyebrow">With thanks to our sponsors</div>
+    <h2>Helping us build a <em>healthier food future</em>.</h2>
+    <div class="sponsors">
+      <img src="assets/kilowen.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/kilowen.png'" alt="Killowen Farm">
+      <img src="assets/greentechhq.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/greentechhq.png'" alt="GreenTechHQ">
+    </div>
+    <p class="partners">Partners: <b>Farmbiddy.ai</b> · <b>Nutrition with Bridget</b> · <b>Quantum Build</b></p>
+  </div>
+</section>
+
+</div>
+
+<div id="brand"><img src="assets/logo.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo.png'" alt=""></div>
+<div id="dots"></div>
+<div id="corner">
+  <img src="assets/app-qr.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/app-qr.png'" alt="QR code">
+  <div><b>Try it on your phone</b><br>Scan to open KnowYourGrub</div>
+</div>
+<div id="ctl">
+  <button data-act="prev">◀ Back</button>
+  <button data-act="pause" class="go" id="pauseBtn">Pause</button>
+  <button data-act="next">Next ▶</button>
+  <button data-act="sound" id="soundBtn">Sound off</button>
+  <button data-act="full">Fullscreen</button>
+</div>
+<div id="hint">Tap or press a key to pause · F for fullscreen · loop resumes on its own</div>
+<div id="bar"></div>
+
+<script>
+/* =====================================================================
+   STAND LOOP — configuration
+   Drop your files into ./assets next to this page:
+     assets/kyg.mp4 (or .webm)   the video. If missing, the video slide is skipped.
+     assets/logo-horizontal.png, logo.png, grub.png, app-qr.png, app-scan.png,
+     pro-overview.png, kilowen.png, greentechhq.png
+   Any image not found locally is fetched from knowyourgrub.com when online.
+   ===================================================================== */
+const CFG={
+  defaultSecs:12,        // per slide, unless the slide sets data-secs
+  idleResume:25,         // seconds of no touching before the loop resumes on its own
+  videoSound:false,      // false = muted (browsers require muted for autoplay)
+  videoEveryLoop:true,   // false = play the video every second loop only
+  startFullscreen:false  // browsers only allow fullscreen after a tap anyway
+};
+
+const slides=[...document.querySelectorAll('.slide')];
+const vslide=document.getElementById('vslide'), vid=document.getElementById('vid');
+const bar=document.getElementById('bar'), dots=document.getElementById('dots');
+let i=0, timer=null, t0=0, dur=0, elapsed=0, paused=false, idleT=null, loops=0, haveVideo=false, raf=null;
+
+dots.innerHTML=slides.map(()=>'<i></i>').join('');
+
+/* Is there a video file at all? */
+vid.addEventListener('loadedmetadata',()=>{haveVideo=true});
+vid.addEventListener('error',()=>{haveVideo=false},true);
+vid.load();
+
+function secsFor(s){ return Number(s.dataset.secs)||CFG.defaultSecs }
+function show(n,{user=false}={}){
+  n=(n+slides.length)%slides.length;
+  const s=slides[n];
+  if(s===vslide&&(!haveVideo||(!CFG.videoEveryLoop&&loops%2===1))){ return show(n+(n>=i?1:-1),{user}) }
+  if(slides[i]===vslide){ vid.pause() }
+  slides.forEach((x,k)=>x.classList.toggle('on',k===n));
+  document.body.classList.toggle('light',s.classList.contains('cream'));
+  document.body.classList.toggle('hidecorner',s===vslide||s.classList.contains('green')&&/Try it/.test(s.textContent));
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===n));
+  if(n<i&&!user)loops++;
+  i=n;
+  clearTimeout(timer); cancelAnimationFrame(raf);
+  if(s===vslide){
+    bar.style.width='0';
+    vid.currentTime=0; vid.muted=!CFG.videoSound;
+    vid.play().catch(()=>{ haveVideo=false; show(i+1) });
+  }else{
+    dur=secsFor(s)*1000; t0=performance.now(); elapsed=0;
+    if(!paused){ tick(); }
+  }
+}
+function tick(){
+  const p=Math.min(1,(elapsed+performance.now()-t0)/dur);
+  bar.style.width=(p*100)+'%';
+  if(p>=1){ show(i+1); return }
+  raf=requestAnimationFrame(tick);
+}
+vid.addEventListener('ended',()=>{ if(!paused) show(i+1) });
+vid.addEventListener('timeupdate',()=>{ if(vid.duration) bar.style.width=(vid.currentTime/vid.duration*100)+'%' });
+
+/* ---- interaction: any touch pauses; the loop resumes after idleResume ---- */
+function wake(){
+  document.body.classList.add('awake');
+  clearTimeout(idleT);
+  idleT=setTimeout(()=>{ document.body.classList.remove('awake'); if(paused)setPaused(false) },CFG.idleResume*1000);
+}
+function setPaused(v){
+  paused=v; document.getElementById('pauseBtn').textContent=v?'Resume':'Pause';
+  if(slides[i]===vslide){ v?vid.pause():vid.play().catch(()=>{}) }
+  else if(v){ cancelAnimationFrame(raf); elapsed+=performance.now()-t0; }
+  else { t0=performance.now(); tick(); }
+}
+document.getElementById('ctl').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; e.stopPropagation(); wake();
+  const a=b.dataset.act;
+  if(a==='prev')show(i-1,{user:true});
+  if(a==='next')show(i+1,{user:true});
+  if(a==='pause')setPaused(!paused);
+  if(a==='full')toggleFull();
+  if(a==='sound'){ CFG.videoSound=!CFG.videoSound; vid.muted=!CFG.videoSound; b.textContent=CFG.videoSound?'Sound on':'Sound off' }
+});
+document.addEventListener('click',e=>{ if(e.target.closest('#ctl'))return; wake(); if(!paused)setPaused(true) });
+document.addEventListener('keydown',e=>{
+  wake();
+  if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); show(i+1,{user:true}) }
+  else if(e.key==='ArrowLeft'){ show(i-1,{user:true}) }
+  else if(e.key.toLowerCase()==='p'){ setPaused(!paused) }
+  else if(e.key.toLowerCase()==='f'){ toggleFull() }
+  else if(e.key.toLowerCase()==='m'){ CFG.videoSound=!CFG.videoSound; vid.muted=!CFG.videoSound; document.getElementById('soundBtn').textContent=CFG.videoSound?'Sound on':'Sound off' }
+});
+let sx=null;
+document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{ if(sx==null)return; const dx=e.changedTouches[0].clientX-sx; sx=null; if(Math.abs(dx)>60){ wake(); show(i+(dx<0?1:-1),{user:true}) } },{passive:true});
+document.addEventListener('mousemove',()=>{ if(!document.body.classList.contains('awake')){ document.body.classList.add('awake'); clearTimeout(idleT); idleT=setTimeout(()=>document.body.classList.remove('awake'),4000) } });
+function toggleFull(){ if(document.fullscreenElement)document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>{}) }
+
+/* Keep the screen awake on a tablet/laptop where the API exists. */
+if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen').catch(()=>{}); lock(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')lock() }) }
+
+/* Start. Give the video a moment to report whether it exists. */
+setTimeout(()=>show(0),300);
+if(CFG.startFullscreen)document.addEventListener('click',toggleFull,{once:true});
+</script>
+</body>
+</html>
