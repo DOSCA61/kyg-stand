@@ -88,7 +88,7 @@ body.needtap #tap{display:grid}
   <button data-act="full">Fullscreen</button>
   <button data-act="change">Change video</button>
 </div>
-<div id="hint">Tap or press a key for controls · F fullscreen · M sound · S size · loop never stops</div>
+<div id="hint">Tap or press a key for controls · F fullscreen · M sound · S size · Esc back to start · loop never stops</div>
 <div id="bar"></div>
 
 <script>
@@ -122,7 +122,7 @@ function play(src){
   if(src instanceof Blob){ objectURL=URL.createObjectURL(src); vid.src=objectURL } else vid.src=src;
   vid.muted=!CFG.sound; vid.loop=true;
   document.body.classList.add('playing'); pick.style.display='none';
-  vid.play().then(()=>document.body.classList.remove('needtap')).catch(()=>document.body.classList.add('needtap'));
+  vid.play().then(()=>document.body.classList.remove('needtap')).catch(()=>{ if(document.body.classList.contains('playing'))document.body.classList.add('needtap') });
 }
 function stop(){ vid.pause(); vid.removeAttribute('src'); vid.load(); document.body.classList.remove('playing','needtap'); pick.style.display='' }
 /* Does a file exist at this URL? A HEAD is not allowed on file://, so probe by loading metadata. */
@@ -134,7 +134,22 @@ let sizeIx=0; try{ sizeIx=Math.max(0,SIZES.indexOf(localStorage.getItem('kyg-loo
 function applySize(){ document.body.classList.remove('size-small','size-fill'); if(SIZES[sizeIx]==='small')document.body.classList.add('size-small'); if(SIZES[sizeIx]==='fill')document.body.classList.add('size-fill'); document.getElementById('sizeBtn').textContent='Size: '+SIZES[sizeIx]; try{localStorage.setItem('kyg-loop-size',SIZES[sizeIx])}catch(e){} }
 vid.addEventListener('loadedmetadata',()=>{ document.body.classList.toggle('portrait',vid.videoHeight>vid.videoWidth); applySize() });
 vid.addEventListener('timeupdate',()=>{ if(vid.duration) bar.style.width=(vid.currentTime/vid.duration*100)+'%' });
-vid.addEventListener('error',()=>{ if(document.body.classList.contains('playing')){ stop(); alert('That file could not be played. Use an MP4 (H.264) or WebM.') } });
+/* A bad file or a dead link never traps the screen: the source is
+   forgotten, the card comes back, and the reason is written on it. */
+function bail(msg){
+  forget(); try{ localStorage.removeItem('kyg-loop-src') }catch(_){}
+  stop();
+  const note=document.getElementById('linkNote');
+  note.innerHTML='<b style="color:#ffb4a8">'+msg+'</b>';
+}
+vid.addEventListener('error',()=>{ if(document.body.classList.contains('playing')){
+  const isLink=/^https?:/.test(vid.currentSrc||vid.src||'');
+  bail(isLink?'That link could not be played — it may not point at the video file itself, or the file has moved. Check the address, or use Choose a video.':'That file could not be played. Use an MP4 (H.264) or WebM.');
+} });
+/* Stalled for too long (e.g. a link that never answers) counts as failed. */
+let stallT=null;
+vid.addEventListener('loadstart',()=>{ clearTimeout(stallT); stallT=setTimeout(()=>{ if(document.body.classList.contains('playing')&&vid.readyState<2) bail('That video is not loading. Check the link or the network, or use Choose a video.') },20000) });
+vid.addEventListener('loadeddata',()=>clearTimeout(stallT));
 
 /* ---- choosing ---- */
 async function useFile(f){ if(!f||!f.type.startsWith('video/'))return; await remember(f); play(f) }
@@ -183,14 +198,16 @@ document.addEventListener('click',e=>{ if(e.target.closest('#ctl,#pick,#tap'))re
 document.addEventListener('mousemove',wake);
 document.addEventListener('keydown',e=>{
   wake(); const k=e.key.toLowerCase();
-  if(k==='f')toggleFull(); else if(k==='m')setSound(!CFG.sound); else if(k==='p'||k===' '){ e.preventDefault(); togglePause() } else if(k==='q')setQR(!CFG.showQR); else if(k==='s'){ sizeIx=(sizeIx+1)%SIZES.length; applySize() } else if(k==='escape'){}
+  if(k==='f')toggleFull(); else if(k==='m')setSound(!CFG.sound); else if(k==='p'||k===' '){ e.preventDefault(); togglePause() } else if(k==='q')setQR(!CFG.showQR); else if(k==='s'){ sizeIx=(sizeIx+1)%SIZES.length; applySize() } else if(k==='escape'){ if(document.body.classList.contains('playing')){ forget(); try{localStorage.removeItem('kyg-loop-src')}catch(_){} stop() } }
 });
 if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen').catch(()=>{}); lock(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')lock() }) }
 
 /* ---- start: ?src → remembered file → assets/kyg.mp4 → ask ---- */
 (async()=>{
   try{ if(localStorage.getItem('kyg-loop-qr')==='0')setQR(false) }catch(e){}
-  const q=new URLSearchParams(location.search).get('src');
+  const qs=new URLSearchParams(location.search);
+  if(qs.has('reset')){ await forget(); try{ localStorage.removeItem('kyg-loop-src'); localStorage.removeItem('kyg-loop-size') }catch(_){} history.replaceState(null,'',location.pathname) }
+  const q=qs.get('src');
   if(q){ play(q); return }
   const f=await recall(); if(f){ play(f); return }
   let saved=null; try{ saved=localStorage.getItem('kyg-loop-src') }catch(_){}
