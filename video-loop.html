@@ -16,6 +16,13 @@ body.awake{cursor:default}
 video{width:100%;height:100%;object-fit:contain;background:#000;display:none}
 body.playing video{display:block}
 body.playing{background:#000}
+/* A phone recording (portrait) is shown as a phone: centred, at a sensible
+   size, on the brand background rather than stretched to the screen. */
+body.playing.portrait{background:radial-gradient(120% 90% at 20% 0%,#0d3a66 0%,var(--navy) 55%,var(--navy2) 100%)}
+body.portrait video{width:auto;height:var(--vh,84vh);max-width:92vw;border-radius:2.6vmin;box-shadow:0 30px 80px rgba(0,0,0,.55);background:#000}
+body.portrait.size-fill video{height:100vh;border-radius:0;box-shadow:none}
+body.portrait.size-small video{--vh:64vh}
+body.playing.fill video{object-fit:cover}
 /* ---- the "add a video" card, shown until a file is chosen ---- */
 #pick{width:min(900px,92vw);display:grid;gap:3vmin;justify-items:start;padding:6vmin;border-radius:3vmin;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);transition:border-color .2s,background .2s}
 #pick.over{border-color:var(--green);background:rgba(19,164,71,.12)}
@@ -77,10 +84,11 @@ body.needtap #tap{display:grid}
   <button data-act="pause" class="go" id="pauseBtn">Pause</button>
   <button data-act="sound" id="soundBtn">Sound off</button>
   <button data-act="qr" id="qrBtn">Hide QR</button>
+  <button data-act="size" id="sizeBtn">Size</button>
   <button data-act="full">Fullscreen</button>
   <button data-act="change">Change video</button>
 </div>
-<div id="hint">Tap or press a key for controls · F fullscreen · M sound · loop never stops</div>
+<div id="hint">Tap or press a key for controls · F fullscreen · M sound · S size · loop never stops</div>
 <div id="bar"></div>
 
 <script>
@@ -120,6 +128,11 @@ function stop(){ vid.pause(); vid.removeAttribute('src'); vid.load(); document.b
 /* Does a file exist at this URL? A HEAD is not allowed on file://, so probe by loading metadata. */
 function probe(src){ return new Promise(res=>{ const v=document.createElement('video'); v.preload='metadata'; v.muted=true; const done=ok=>{ v.src=''; res(ok) }; v.onloadedmetadata=()=>done(true); v.onerror=()=>done(false); v.src=src; setTimeout(()=>done(false),8000) }) }
 
+/* Portrait detection + a Size button: phone (default) → smaller → full height. */
+const SIZES=['phone','small','fill'];
+let sizeIx=0; try{ sizeIx=Math.max(0,SIZES.indexOf(localStorage.getItem('kyg-loop-size')||'phone')) }catch(e){}
+function applySize(){ document.body.classList.remove('size-small','size-fill'); if(SIZES[sizeIx]==='small')document.body.classList.add('size-small'); if(SIZES[sizeIx]==='fill')document.body.classList.add('size-fill'); document.getElementById('sizeBtn').textContent='Size: '+SIZES[sizeIx]; try{localStorage.setItem('kyg-loop-size',SIZES[sizeIx])}catch(e){} }
+vid.addEventListener('loadedmetadata',()=>{ document.body.classList.toggle('portrait',vid.videoHeight>vid.videoWidth); applySize() });
 vid.addEventListener('timeupdate',()=>{ if(vid.duration) bar.style.width=(vid.currentTime/vid.duration*100)+'%' });
 vid.addEventListener('error',()=>{ if(document.body.classList.contains('playing')){ stop(); alert('That file could not be played. Use an MP4 (H.264) or WebM.') } });
 
@@ -162,6 +175,7 @@ document.getElementById('ctl').addEventListener('click',e=>{
   if(a==='pause')togglePause();
   if(a==='sound')setSound(!CFG.sound);
   if(a==='qr')setQR(!CFG.showQR);
+  if(a==='size'){ sizeIx=(sizeIx+1)%SIZES.length; applySize() }
   if(a==='full')toggleFull();
   if(a==='change'){ forget(); try{localStorage.removeItem('kyg-loop-src')}catch(_){} stop(); }
 });
@@ -169,7 +183,7 @@ document.addEventListener('click',e=>{ if(e.target.closest('#ctl,#pick,#tap'))re
 document.addEventListener('mousemove',wake);
 document.addEventListener('keydown',e=>{
   wake(); const k=e.key.toLowerCase();
-  if(k==='f')toggleFull(); else if(k==='m')setSound(!CFG.sound); else if(k==='p'||k===' '){ e.preventDefault(); togglePause() } else if(k==='q')setQR(!CFG.showQR); else if(k==='escape'){}
+  if(k==='f')toggleFull(); else if(k==='m')setSound(!CFG.sound); else if(k==='p'||k===' '){ e.preventDefault(); togglePause() } else if(k==='q')setQR(!CFG.showQR); else if(k==='s'){ sizeIx=(sizeIx+1)%SIZES.length; applySize() } else if(k==='escape'){}
 });
 if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen').catch(()=>{}); lock(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')lock() }) }
 
