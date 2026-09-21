@@ -57,7 +57,11 @@ body.needtap #tap{display:grid}
       <button class="btn" id="chooseBtn">Choose a video</button>
       <button class="btn sec" id="fileBtn">Use assets/kyg.mp4</button>
     </div>
-    <p class="small">MP4 (H.264) or WebM · plays muted so the browser allows autoplay — press M or the Sound button for audio.</p>
+    <form id="linkForm" style="display:flex;gap:1vmin;flex-wrap:wrap;width:100%">
+      <input id="linkIn" type="url" placeholder="…or paste a link to a video file" style="flex:1;min-width:16em;font:inherit;font-size:clamp(15px,2vmin,24px);padding:.7em 1em;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff">
+      <button class="btn sec" type="submit">Use link</button>
+    </form>
+    <p class="small" id="linkNote">MP4 (H.264) or WebM · plays muted so the browser allows autoplay — press M or the Sound button for audio.<br>A link must point at the video file itself (Dropbox, OneDrive, GitHub, your own site). iCloud and Google Drive share links open a web page, not the file — download from those and use <b>Choose a video</b> instead.</p>
     <input type="file" id="fileIn" accept="video/*" style="display:none">
   </div>
 </div>
@@ -87,7 +91,9 @@ body.needtap #tap{display:grid}
         starts on its own. Best for the stand: no clicking on the day.
      2. Choose / drop a file — kept in this browser (IndexedDB), so it is
         still there after a reload or a reboot. Nothing leaves the machine.
-     3. Add ?src=path/or/url.mp4 to the address.
+     3. Paste a link to the video file (Dropbox / OneDrive / GitHub / your
+        own site — direct file links only; iCloud share links are web pages
+        and cannot be played by a browser), or add ?src=… to the address.
    ===================================================================== */
 const CFG={ sound:false, showQR:true, defaultFile:'assets/kyg.mp4', altFile:'assets/kyg.webm' };
 
@@ -125,6 +131,23 @@ document.getElementById('fileBtn').onclick=async()=>{ if(await probe(CFG.default
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); pick.classList.add('over') }));
 ['dragleave','drop'].forEach(ev=>document.addEventListener(ev,e=>{ e.preventDefault(); pick.classList.remove('over') }));
 document.addEventListener('drop',e=>{ const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f)useFile(f) });
+/* Links. Some share links can be turned into direct file links; iCloud's cannot. */
+function directLink(u){
+  try{ const x=new URL(u.trim());
+    if(/dropbox\.com$/.test(x.hostname)){ x.searchParams.set('dl','1'); x.searchParams.delete('raw'); return {url:x.toString()} }
+    if(/^(www\.)?github\.com$/.test(x.hostname)&&/\/blob\//.test(x.pathname)){ return {url:'https://raw.githubusercontent.com'+x.pathname.replace('/blob/','/')} }
+    if(/icloud\.com$/.test(x.hostname)) return {err:'iCloud share links open a web page, not the video file, so a browser cannot play them. Download the video from iCloud and use Choose a video.'};
+    if(/drive\.google\.com$/.test(x.hostname)){ const m=x.pathname.match(/\/d\/([^/]+)/)||[null,x.searchParams.get('id')]; if(m[1]) return {url:'https://drive.google.com/uc?export=download&id='+m[1],warn:'Google Drive links only work for small files that are shared with "Anyone with the link"; if it fails, download it and use Choose a video.'}; }
+    return {url:x.toString()};
+  }catch(e){ return {err:'That does not look like a link.'} }
+}
+document.getElementById('linkForm').onsubmit=e=>{
+  e.preventDefault(); const v=document.getElementById('linkIn').value; const d=directLink(v); const note=document.getElementById('linkNote');
+  if(d.err){ note.innerHTML='<b style="color:#ffb4a8">'+d.err+'</b>'; return }
+  if(d.warn) note.textContent=d.warn;
+  try{ localStorage.setItem('kyg-loop-src',d.url) }catch(_){}
+  forget(); play(d.url);
+};
 document.getElementById('tapBtn').onclick=()=>{ vid.play().then(()=>document.body.classList.remove('needtap')).catch(()=>{}) };
 
 /* ---- controls ---- */
@@ -140,7 +163,7 @@ document.getElementById('ctl').addEventListener('click',e=>{
   if(a==='sound')setSound(!CFG.sound);
   if(a==='qr')setQR(!CFG.showQR);
   if(a==='full')toggleFull();
-  if(a==='change'){ forget(); stop(); }
+  if(a==='change'){ forget(); try{localStorage.removeItem('kyg-loop-src')}catch(_){} stop(); }
 });
 document.addEventListener('click',e=>{ if(e.target.closest('#ctl,#pick,#tap'))return; wake() });
 document.addEventListener('mousemove',wake);
@@ -156,6 +179,8 @@ if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen')
   const q=new URLSearchParams(location.search).get('src');
   if(q){ play(q); return }
   const f=await recall(); if(f){ play(f); return }
+  let saved=null; try{ saved=localStorage.getItem('kyg-loop-src') }catch(_){}
+  if(saved){ play(saved); return }
   if(await probe(CFG.defaultFile)){ play(CFG.defaultFile); return }
   if(await probe(CFG.altFile)){ play(CFG.altFile); return }
   /* nothing yet — the card stays up */
