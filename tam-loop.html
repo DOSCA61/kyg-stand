@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en-IE">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>KnowYourGrub — market loop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ---- Theme: lifted from knowyourgrub.com/styles.css :root (same as the stand loop) ---- */
+:root{
+  --cream:#fbfcf8; --deep:#087c3a; --green:#13a447; --ink:#10243d; --light:#edf8f0;
+  --muted:#617083; --navy:#071f3d; --navy2:#04101f;
+  --consumers:#13a447; --practitioners:#6c63ff; --venues:#d9782a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--navy);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;overflow:hidden;cursor:none}
+body.awake{cursor:default}
+#stage{position:fixed;inset:0;background:radial-gradient(120% 90% at 20% 0%,#0d3a66 0%,var(--navy) 55%,var(--navy2) 100%);display:grid;grid-template-columns:minmax(0,.95fr) minmax(0,1.25fr);gap:2vmin;padding:8.5vmin 5vmin 10vmin}
+/* ---- left column: hero number + the growing list ---- */
+#left{display:grid;align-content:start;gap:1.1vmin;min-width:0}
+.eyebrow{font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:clamp(13px,1.6vmin,22px);color:var(--green)}
+#hero{font-size:clamp(52px,9.5vmin,150px);line-height:.95;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;color:#fff;transition:color .5s}
+#hero small{font-size:.42em;font-weight:700;color:var(--green);letter-spacing:-.01em}
+#per{font-size:clamp(15px,2vmin,26px);opacity:.75}
+#head{font-size:clamp(20px,3vmin,44px);line-height:1.08;font-weight:800;letter-spacing:-.02em;min-height:2.2em;transition:opacity .4s}
+#head em{font-style:normal;color:var(--green)}
+#sub{font-size:clamp(14px,1.8vmin,24px);line-height:1.35;opacity:.88;max-width:30em;min-height:2.2em}
+#list{display:grid;gap:.45vmin;margin-top:.4vmin}
+body.many #list{grid-template-columns:1fr 1fr;gap:.5vmin}
+body.many .chip{font-size:clamp(11px,1.3vmin,17px);padding:.45vmin 1vmin;gap:.8vmin}
+body.many .chip small{font-size:.78em}
+.vlink{display:inline-block;margin-top:1vmin;padding:.5em 1em;border-radius:999px;background:rgba(19,164,71,.16);border:1px solid rgba(19,164,71,.6);color:#dff7e6;text-decoration:none;font-weight:700;font-size:clamp(12px,1.5vmin,20px)}
+.vlink:hover{background:var(--green);color:#fff}
+.pen{display:grid;grid-template-columns:repeat(3,1fr);gap:1vmin;margin-top:1.2vmin}
+.pen div{padding:1vmin 1.2vmin;border-radius:1.2vmin;background:rgba(19,164,71,.14);border:1px solid rgba(19,164,71,.5);display:grid;gap:.2vmin}
+.pen b{font-size:clamp(20px,3vmin,44px);line-height:1;color:var(--green)}
+.pen span{font-size:clamp(11px,1.4vmin,18px);opacity:.85}
+.pen em{font-style:normal;font-weight:800;font-size:clamp(13px,1.8vmin,24px)}
+.chip{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:1.2vmin;padding:.55vmin 1.2vmin;border-radius:1.2vmin;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);font-size:clamp(12px,1.5vmin,20px);opacity:0;transform:translateY(1.5vmin);transition:opacity .5s,transform .5s}
+.chip.on{opacity:1;transform:none}
+.chip i{width:1.3em;height:1.3em;border-radius:50%;display:block;border:2px solid transparent}
+.chip i.unsized{background:transparent!important;border:2px dashed rgba(255,255,255,.7)}
+.chip b{font-variant-numeric:tabular-nums;font-weight:800}
+.chip small{display:block;opacity:.65;font-size:.8em}
+.chip.hot{background:rgba(19,164,71,.18);border-color:rgba(19,164,71,.6)}
+/* ---- right column: the bubbles ---- */
+#right{position:relative;min-width:0}
+#viz{width:100%;height:100%;display:block;overflow:visible}
+#viz circle.b{stroke:var(--navy);stroke-width:2;transition:opacity .4s}
+#viz circle.b.unsized{fill:transparent;stroke:rgba(255,255,255,.8);stroke-dasharray:6 6;animation:spin 20s linear infinite}
+@keyframes spin{to{stroke-dashoffset:-120}}
+#viz text{fill:#fff;font-family:inherit;font-weight:800;text-anchor:middle;pointer-events:none}
+#viz text.v{font-weight:600;opacity:.9}
+#viz circle.b:hover{stroke:#fff}
+#tip{position:fixed;pointer-events:none;background:rgba(255,255,255,.97);color:var(--ink);padding:1vmin 1.3vmin;border-radius:1vmin;font-size:clamp(12px,1.5vmin,18px);line-height:1.35;box-shadow:0 10px 30px rgba(0,0,0,.3);opacity:0;transition:opacity .15s;z-index:9;max-width:24em}
+#tip b{color:var(--deep)}
+#legend{position:absolute;left:0;top:0;display:flex;gap:2.4vmin;font-size:clamp(12px,1.5vmin,19px);opacity:.85}
+#legend span{display:flex;align-items:center;gap:.5em}
+#legend i{width:1em;height:1em;border-radius:50%;display:block}
+.fly{position:fixed;font-weight:800;font-size:clamp(28px,5vmin,80px);color:var(--green);pointer-events:none;z-index:8;animation:fly 1.6s cubic-bezier(.2,.7,.2,1) forwards;text-shadow:0 6px 24px rgba(0,0,0,.4)}
+@keyframes fly{0%{opacity:0;transform:translate(0,0) scale(.6)}15%{opacity:1;transform:translate(0,0) scale(1.1)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) scale(.5)}}
+/* ---- footer: sources & assumptions ---- */
+#foot{position:fixed;left:5vmin;right:5vmin;bottom:2.4vmin;font-size:clamp(10px,1.25vmin,16px);line-height:1.4;opacity:.55;z-index:5;display:grid;gap:.3vmin}
+#foot b{color:var(--green)}
+/* ---- chrome, same as the stand loop ---- */
+#bar{position:fixed;left:0;bottom:0;height:.6vmin;background:var(--green);width:0;z-index:6}
+#brand{position:fixed;left:2.2vmin;top:2vmin;z-index:5;display:flex;align-items:center;gap:1.4vmin;opacity:.95}
+#brand img{height:clamp(30px,5.5vmin,80px);width:auto}
+#brand .fin{font-size:clamp(11px,1.5vmin,20px);color:#dff7e6;font-weight:600}
+#ctl{position:fixed;left:50%;bottom:3vmin;transform:translateX(-50%);display:flex;gap:1vmin;z-index:7;opacity:0;transition:opacity .3s;pointer-events:none}
+body.awake #ctl{opacity:1;pointer-events:auto}
+#ctl button{font:inherit;font-weight:700;font-size:clamp(14px,1.8vmin,22px);padding:.7em 1.2em;border-radius:999px;border:0;background:rgba(255,255,255,.95);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.25);cursor:pointer}
+#ctl button.go{background:var(--green);color:#fff}
+#dots{position:fixed;left:50%;top:2.4vmin;transform:translateX(-50%);display:flex;gap:.8vmin;z-index:5}
+#dots i{width:1.2vmin;height:1.2vmin;border-radius:50%;background:rgba(255,255,255,.35);display:block}
+#dots i.on{background:var(--green)}
+#hint{position:fixed;right:2.2vmin;top:2.6vmin;font-size:clamp(11px,1.4vmin,18px);opacity:.45;z-index:5}
+@media (max-width:900px){#stage{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding:10vmin 4vmin 12vmin}#legend{position:static;margin-top:1vmin}#foot{display:none}}
+html.deck #dots,html.deck #hint,html.deck #ctl,html.deck #bar{display:none}
+@media (prefers-reduced-motion:reduce){.chip,.fly{transition:none;animation:none}}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="left">
+    <div class="eyebrow">Total addressable market · per year</div>
+    <div id="hero">€0</div>
+    <div id="per">across the opportunities added so far</div>
+    <div id="head"></div>
+    <div id="sub"></div>
+    <div id="list"></div>
+  </div>
+  <div id="right">
+    <svg id="viz" viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid meet" aria-label="Market opportunities, one bubble per segment, area proportional to annual revenue opportunity"><g id="field"></g></svg>
+    <div id="legend">
+      <span><i style="background:var(--consumers)"></i>Consumers</span>
+      <span><i style="background:var(--practitioners)"></i>Practitioners</span>
+      <span><i style="background:var(--venues)"></i>Eating out</span>
+      <span><i style="border:2px dashed rgba(255,255,255,.7)"></i>Not yet sized</span>
+    </div>
+  </div>
+</div>
+<div id="tip"></div>
+
+<div id="foot">
+  <div id="srcline"><b>Sources</b> CSO 2024 (Republic of Ireland population 5.5m; 10% avoid a food, safefood’s island-wide figure is up to 900,000) · CORU State of the Register, 30 June 2025 (1,652 dietitians) + NTOI/IINH · HCPC register summary, 1 Sept 2026 (13,064 dietitians) · Eurostat (EU population 450.4m, 1 Jan 2025) · Eurostat / Statista (1.58 million food &amp; beverage service enterprises, EU, 2024) · EU Regulation 1169/2011 Art. 44 &amp; S.I. 489/2014.</div>
+  <div id="assume"><b>Our assumptions</b> consumer €7.99/month · practitioner €45/month · venue €100/yr · 10% of people avoid a food (Ireland and Europe) · ~150,000 European practitioners is our own order‑of‑magnitude estimate. Edit these at the top of the page’s script.</div>
+</div>
+
+<div id="brand"><img src="assets/logo-horizontal.png" onerror="this.onerror=null;this.src='https://www.knowyourgrub.com/assets/logo-horizontal.png'" alt="KnowYourGrub"><span class="fin">National AI Challenge 2026 · Finalist</span></div>
+<div id="dots"></div>
+<div id="hint">tap to pause · ← → · F full screen</div>
+<div id="bar"></div>
+<div id="ctl">
+  <button data-act="prev">◀ Back</button>
+  <button data-act="pause" id="pauseBtn">Pause</button>
+  <button data-act="next" class="go">Next ▶</button>
+  <button data-act="full">Full screen</button>
+</div>
+
+<script>
+/* =====================================================================
+   MARKET LOOP — configuration. Change the prices here and every number,
+   bubble and total recomputes. Values are per year, in euro.
+   ===================================================================== */
+const PRICE={ consumer:7.99*12, practitioner:45*12, venue:100 };
+const CFG={ stageSecs:9, introSecs:6, holdSecs:14, idleResume:25, once:false };
+/* ?deck  = faster, one pass, no controls — for recording a video for the pitch deck.
+   ?secs=N overrides the per-step time; ?once stops on the last frame instead of looping. */
+const Q=new URLSearchParams(location.search);
+if(Q.has('deck')){ Object.assign(CFG,{stageSecs:4,introSecs:3,holdSecs:8,once:true}); document.documentElement.classList.add('deck') }
+if(Q.has('secs'))CFG.stageSecs=Number(Q.get('secs'))||CFG.stageSecs;
+if(Q.has('once'))CFG.once=true;
+
+/* Each step adds one opportunity. people × price = annual opportunity. */
+const STEPS=[
+  {intro:true, head:'Where is the <em>market</em>?', sub:'Start with the people who already avoid a food. Then add everyone who has to answer for them.'},
+  {id:'ie-con', short:'People · Ireland', group:'consumers', name:'Ireland — people avoiding a food', people:550000, unit:'people', price:PRICE.consumer,
+   head:'<em>550,000</em> people in Ireland avoid at least one food.', sub:'One in ten of the Republic’s 5.5 million. Allergy, intolerance, coeliac disease, medical advice: every one of them reads labels for a living.', src:'10% of 5.5m (CSO 2024); safefood puts the island-wide figure at up to 900,000'},
+  {pen:true, head:'Even a <em>small share</em> of Ireland is a business.', sub:'At €7.99 a month, one shopper in a hundred pays for the team. One in ten is a company.',
+   tiles:[[1,5500,'€527k'],[5,27500,'€2.64m'],[10,55000,'€5.27m']]},
+  {id:'ie-pra', short:'Dietitians · IE', group:'practitioners', name:'Ireland — dietitians & nutrition professionals', people:2100, unit:'professionals', price:PRICE.practitioner,
+   head:'The people who <em>tell them what to avoid</em>.', sub:'About 1,650 CORU‑registered dietitians plus NTOI/IINH nutrition professionals set the lists their clients live by. KnowYourGrub Pro puts that list in the client’s pocket.', src:'CORU State of the Register, 30 June 2025 (1,652) + NTOI/IINH'},
+  {id:'uk-pra', short:'Dietitians · UK', group:'practitioners', name:'UK — registered dietitians', people:13064, unit:'dietitians', price:PRICE.practitioner,
+   head:'Same profession, <em>eight times</em> the register.', sub:'13,064 HCPC‑registered dietitians in the UK, reading the same 14 allergens under assimilated law.', src:'HCPC register summary, 1 Sept 2026'},
+  {id:'eu-con', short:'People · Europe', group:'consumers', name:'Europe — people avoiding a food', people:45000000, unit:'people', price:PRICE.consumer,
+   head:'The label law is <em>European</em>. So is the market.', sub:'Regulation 1169/2011 is the same in every member state. If Ireland’s one‑in‑ten holds, that is roughly 45 million people across the EU.', src:'10% of 450.4m (Eurostat, 1 Jan 2025) — assumption'},
+  {id:'eu-pra', short:'Dietitians · Europe', group:'practitioners', name:'Europe — dietitians & nutrition practitioners', people:150000, unit:'practitioners', price:PRICE.practitioner,
+   head:'And the practitioners <em>behind</em> them.', sub:'Order‑of‑magnitude only: the professions are regulated country by country, so we count Europe conservatively at ~150,000 until we have each register.', src:'our estimate (assumption)'},
+  {id:'eu-ven', short:'Menus · Europe', group:'venues', name:'Europe — restaurants, cafés & caterers', people:1580000, unit:'venues', price:PRICE.venue,
+   head:'Every menu in Europe <em>must</em> answer the allergen question.', sub:'1.58 million food & beverage service enterprises in the EU. Article 44 makes allergen information a legal duty for each of them — most still answer it by hand.', src:'Eurostat / Statista, 2024'},
+  {id:'retail', short:'Retail', group:'venues', name:'Retailers & manufacturers — label checks', unsized:true,
+   head:'Then the people who <em>write</em> the labels.', sub:'A retailer or manufacturer checking a label before it ships is the same engine, sold once per product line. Not sized yet — deliberately.', src:'not yet sized'},
+  {hold:true, link:'https://claude.ai/artifact/NDgGfzuEA77KofkK7Ypx5T', linkText:'Every figure fact‑checked, 22 Sept 2026 — read the veracity report', head:'Start in Ireland. <em>Grow with the law.</em>', sub:'One regulation, one engine, three customers who all need the same answer: what is really in this food, and does it matter for me?'}
+];
+
+/* ---------------------------------------------------------------- */
+const COL={consumers:'var(--consumers)',practitioners:'var(--practitioners)',venues:'var(--venues)'};
+const $=s=>document.querySelector(s);
+const hero=$('#hero'), head=$('#head'), sub=$('#sub'), list=$('#list'), field=$('#field'), bar=$('#bar'), dots=$('#dots'), tip=$('#tip');
+const fmt=v=>{ if(v>=1e9)return '€'+(v/1e9).toFixed(v<1e10?1:0)+'<small>bn</small>'; if(v>=1e6)return '€'+(v/1e6).toFixed(v<1e7?1:0)+'<small>m</small>'; if(v>=1e3)return '€'+Math.round(v/1e3)+'<small>k</small>'; return '€'+Math.round(v) };
+const fmtPlain=v=>fmt(v).replace(/<[^>]+>/g,'');
+const num=n=>n.toLocaleString('en-IE');
+const priceLabel=s=>s.price===PRICE.consumer?'€7.99/month':s.price===PRICE.practitioner?'€45/month':'€'+num(s.price)+'/yr';
+STEPS.forEach(s=>{ if(s.people)s.value=s.people*s.price });
+
+dots.innerHTML=STEPS.map(()=>'<i></i>').join('');
+list.innerHTML=STEPS.filter(s=>s.id).map(s=>`<div class="chip" data-id="${s.id}"><i style="background:${COL[s.group]}" class="${s.unsized?'unsized':''}"></i><span>${s.name}<small>${s.unsized?'not yet sized':num(s.people)+' '+s.unit+' × '+priceLabel(s)}</small></span><b>${s.unsized?'?':'+'+fmtPlain(s.value)}</b></div>`).join('');
+
+/* ---- bubble packing: greedy, each new circle hugs the existing ones as close to the centre as it can ---- */
+const GAP=6;
+function pack(items){
+  const placed=[];
+  for(const it of items){
+    if(!placed.length){ placed.push({...it,x:0,y:0}); continue }
+    let best=null;
+    for(const c of placed){
+      for(let a=0;a<360;a+=6){
+        const d=c.r+it.r+GAP, x=c.x+d*Math.cos(a*Math.PI/180), y=c.y+d*Math.sin(a*Math.PI/180);
+        if(placed.some(p=>Math.hypot(p.x-x,p.y-y)<p.r+it.r+GAP-0.5))continue;
+        const dist=Math.hypot(x,y); if(!best||dist<best.dist)best={x,y,dist};
+      }
+    }
+    placed.push({...it,x:best.x,y:best.y});
+  }
+  return placed;
+}
+
+/* ---- animation state: every drawn value eases toward its target each frame ---- */
+const anim={total:0,totalT:0,scale:1,scaleT:1,ox:0,oy:0,oxT:0,oyT:0,circles:{}};
+let shown=[]; /* ids currently on the field */
+function layout(){
+  const items=shown.map(id=>STEPS.find(s=>s.id===id));
+  const maxV=Math.max(1,...items.filter(s=>s.value).map(s=>s.value));
+  const R=260;
+  const withR=items.map(s=>({id:s.id,r:s.unsized?90:Math.max(16,R*Math.sqrt(s.value/maxV))}));
+  const placed=pack(withR);
+  if(!placed.length)return;
+  const minX=Math.min(...placed.map(p=>p.x-p.r)),maxX=Math.max(...placed.map(p=>p.x+p.r));
+  const minY=Math.min(...placed.map(p=>p.y-p.r)),maxY=Math.max(...placed.map(p=>p.y+p.r));
+  const w=maxX-minX,h=maxY-minY; const sc=Math.min(920/w,720/h,1.6);
+  anim.scaleT=sc; anim.oxT=500-((minX+maxX)/2)*sc; anim.oyT=400-((minY+maxY)/2)*sc;
+  placed.forEach(p=>{ const c=anim.circles[p.id]||(anim.circles[p.id]={x:p.x,y:p.y,r:0}); c.xT=p.x;c.yT=p.y;c.rT=p.r });
+}
+function ensureNode(s){
+  let g=field.querySelector(`[data-id="${s.id}"]`); if(g)return g;
+  g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.dataset.id=s.id;
+  g.innerHTML=`<circle class="b ${s.unsized?'unsized':''}" fill="${COL[s.group]}"></circle><text class="n"></text><text class="v"></text>`;
+  g.querySelector('circle').addEventListener('mousemove',e=>{ tip.style.opacity=1; tip.style.left=(e.clientX+14)+'px'; tip.style.top=(e.clientY+14)+'px'; tip.innerHTML=`<b>${s.name}</b><br>${s.unsized?'Not yet sized':num(s.people)+' '+s.unit+' × €'+num(s.price)+'/yr = <b>'+fmtPlain(s.value)+'</b>'}<br><span style="opacity:.7">${s.src}</span>` });
+  g.querySelector('circle').addEventListener('mouseleave',()=>tip.style.opacity=0);
+  field.appendChild(g); return g;
+}
+function frame(){
+  const e=0.075;
+  anim.total+=(anim.totalT-anim.total)*e; if(Math.abs(anim.totalT-anim.total)<500)anim.total=anim.totalT;
+  anim.scale+=(anim.scaleT-anim.scale)*e; anim.ox+=(anim.oxT-anim.ox)*e; anim.oy+=(anim.oyT-anim.oy)*e;
+  hero.innerHTML=fmt(anim.total);
+  field.setAttribute('transform',`translate(${anim.ox} ${anim.oy}) scale(${anim.scale})`);
+  for(const id in anim.circles){
+    const c=anim.circles[id]; c.x+=(c.xT-c.x)*e; c.y+=(c.yT-c.y)*e; c.r+=(c.rT-c.r)*e;
+    const s=STEPS.find(z=>z.id===id), g=ensureNode(s), ci=g.querySelector('circle'), tn=g.querySelector('.n'), tv=g.querySelector('.v');
+    ci.setAttribute('cx',c.x); ci.setAttribute('cy',c.y); ci.setAttribute('r',Math.max(0,c.r));
+    const px=c.r*anim.scale; /* on-screen radius in viewBox units */
+    const big=px>60, mid=px>30;
+    const fs=Math.min(24,Math.max(9,px/5.2))/anim.scale;
+    tn.style.display=big?'':'none'; tv.style.display=mid?'':'none';
+    tn.textContent=s.short; tn.setAttribute('x',c.x); tn.setAttribute('y',c.y-(mid?fs*.3:0)); tn.setAttribute('font-size',fs);
+    tv.textContent=s.unsized?'?':fmtPlain(s.value); tv.setAttribute('x',c.x); tv.setAttribute('y',c.y+(big?fs*1.05:fs*.35)); tv.setAttribute('font-size',big?fs*1.1:fs*1.2);
+    ci.style.opacity=c.rT===0&&c.r<1?0:1;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- stepping ---- */
+let i=-1, timer=null, t0=0, dur=0, elapsed=0, paused=false, idleT=null, raf=null;
+function fly(text){
+  const from=list.querySelector('.chip.hot b'); if(!from)return;
+  const a=from.getBoundingClientRect(), b=hero.getBoundingClientRect();
+  const el=document.createElement('div'); el.className='fly'; el.textContent=text;
+  el.style.left=a.left+'px'; el.style.top=a.top+'px';
+  el.style.setProperty('--dx',(b.left+b.width*.4-a.left)+'px'); el.style.setProperty('--dy',(b.top+b.height*.4-a.top)+'px');
+  document.body.appendChild(el); setTimeout(()=>el.remove(),1700);
+}
+function show(n,{user=false}={}){
+  n=(n+STEPS.length)%STEPS.length; i=n; const s=STEPS[n];
+  [...dots.children].forEach((d,k)=>d.classList.toggle('on',k===n));
+  head.innerHTML=s.head; sub.innerHTML=s.pen?s.sub+'<div class="pen">'+s.tiles.map(t=>`<div><b>${t[0]}%</b><span>${num(t[1])} users</span><em>${t[2]} ARR</em></div>`).join('')+'</div>':s.link?s.sub+`<p><a class="vlink" href="${s.link}" target="_blank" rel="noopener">✔ ${s.linkText}</a></p>`:s.sub;
+  /* which opportunities are on the board at this step */
+  shown=STEPS.slice(0,n+1).filter(z=>z.id).map(z=>z.id);
+  for(const id in anim.circles){ if(!shown.includes(id)){ anim.circles[id].rT=0; if(anim.circles[id].r<1)delete anim.circles[id] } }
+  anim.totalT=STEPS.slice(0,n+1).reduce((a,z)=>a+(z.value||0),0);
+  if(!shown.length){ anim.scaleT=1; anim.oxT=0; anim.oyT=0; field.querySelectorAll('g').forEach(g=>g.remove()); anim.circles={} }
+  else layout();
+  document.body.classList.toggle('many',shown.length>6);
+  [...list.children].forEach(ch=>{ const on=shown.includes(ch.dataset.id); ch.classList.toggle('on',on); ch.classList.toggle('hot',ch.dataset.id===s.id) });
+  if(s.id&&s.value&&!user) setTimeout(()=>fly('+'+fmtPlain(s.value)),350);
+  clearTimeout(timer); cancelAnimationFrame(raf);
+  dur=(s.intro?CFG.introSecs:s.hold?CFG.holdSecs:CFG.stageSecs)*1000; t0=performance.now(); elapsed=0;
+  if(!paused)tick();
+}
+function tick(){
+  const p=Math.min(1,(elapsed+performance.now()-t0)/dur);
+  bar.style.width=(p*100)+'%';
+  if(p>=1){ if(CFG.once&&i===STEPS.length-1){ bar.style.width='0'; return } show(i+1); return }
+  raf=requestAnimationFrame(tick);
+}
+
+/* ---- interaction: any touch pauses; the loop resumes after idleResume ---- */
+function wake(){
+  document.body.classList.add('awake'); clearTimeout(idleT);
+  idleT=setTimeout(()=>{ document.body.classList.remove('awake'); if(paused)setPaused(false) },CFG.idleResume*1000);
+}
+function setPaused(v){
+  paused=v; $('#pauseBtn').textContent=v?'Resume':'Pause';
+  if(v){ cancelAnimationFrame(raf); elapsed+=performance.now()-t0 } else { t0=performance.now(); tick() }
+}
+$('#ctl').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return; e.stopPropagation(); wake();
+  const a=b.dataset.act;
+  if(a==='prev')show(i-1,{user:true}); if(a==='next')show(i+1,{user:true});
+  if(a==='pause')setPaused(!paused); if(a==='full')toggleFull();
+});
+document.addEventListener('click',e=>{ if(e.target.closest('#ctl'))return; if(e.target.closest('a'))return; wake(); if(!paused)setPaused(true) });
+document.addEventListener('keydown',e=>{
+  wake();
+  if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); show(i+1,{user:true}) }
+  else if(e.key==='ArrowLeft'){ show(i-1,{user:true}) }
+  else if(e.key.toLowerCase()==='p'){ setPaused(!paused) }
+  else if(e.key.toLowerCase()==='f'){ toggleFull() }
+});
+let sx=null;
+document.addEventListener('touchstart',e=>{sx=e.touches[0].clientX},{passive:true});
+document.addEventListener('touchend',e=>{ if(sx==null)return; const dx=e.changedTouches[0].clientX-sx; sx=null; if(Math.abs(dx)>60){ wake(); show(i+(dx<0?1:-1),{user:true}) } },{passive:true});
+document.addEventListener('mousemove',()=>{ if(!document.body.classList.contains('awake')){ document.body.classList.add('awake'); clearTimeout(idleT); idleT=setTimeout(()=>document.body.classList.remove('awake'),4000) } });
+function toggleFull(){ if(document.fullscreenElement)document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>{}) }
+if('wakeLock' in navigator){ const lock=()=>navigator.wakeLock.request('screen').catch(()=>{}); lock(); document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible')lock() }) }
+window.addEventListener('resize',layout);
+setTimeout(()=>show(0),200);
+</script>
+</body>
+</html>
